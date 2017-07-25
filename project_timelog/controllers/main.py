@@ -42,7 +42,7 @@ class TimelogController(http.Controller):
             if timelog and timelog[0].start_datetime is not False:
                 date_object = datetime.datetime.strptime(timelog[0].start_datetime, "%Y-%m-%d %H:%M:%S")
                 if date_object.day == datetime.datetime.now().day:
-                    log_timer = int(round(http.request.env.user.active_work_id.unit_amount * 3600, 0))
+                    log_timer = int(round(http.request.env.user.active_work_id.hours * 3600, 0))
 
         play_status = False
         if all_timelog_current_user:
@@ -57,10 +57,10 @@ class TimelogController(http.Controller):
         task_timer = 0
         if all_timelog_current_user_in_current_task:
             # all work for current user in active task
-            all_work = request.env["account.analytic.line"].search([('task_id', '=', http.request.env.user.active_task_id.id), ('user_id', '=', http.request.env.user.id)])
+            all_work = request.env["project.task.work"].search([('task_id', '=', http.request.env.user.active_task_id.id), ('user_id', '=', http.request.env.user.id)])
             sum_spent = 0
             for r in all_work:
-                sum_spent = sum_spent + r.unit_amount
+                sum_spent = sum_spent + r.hours
             task_timer = int(round(sum_spent * 3600, 0))
             if play_status:
                 task_timer = task_timer + play_status_time
@@ -75,7 +75,7 @@ class TimelogController(http.Controller):
             today_work_id = list(set(today_work_id))
             sum_spent_day = 0
             for e in today_work_id:
-                sum_spent_day = sum_spent_day + request.env["account.analytic.line"].search([("id", "=", e)]).unit_amount
+                sum_spent_day = sum_spent_day + request.env["project.task.work"].search([("id", "=", e)]).hours
             day_timer = int(round(sum_spent_day * 3600, 0))
             if play_status:
                 day_timer = day_timer + play_status_time
@@ -93,7 +93,7 @@ class TimelogController(http.Controller):
             week_work_id = list(set(week_work_id))
             sum_spent_week = 0
             for e in week_work_id:
-                sum_spent_week = sum_spent_week + request.env["account.analytic.line"].search([("id", "=", e)]).unit_amount
+                sum_spent_week = sum_spent_week + request.env["project.task.work"].search([("id", "=", e)]).hours
             week_timer = int(round(sum_spent_week * 3600, 0))
             if play_status:
                 week_timer = week_timer + play_status_time

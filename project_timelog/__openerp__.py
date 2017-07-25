@@ -3,19 +3,19 @@
     "name": """Time Tracker""",
     "summary": """Adds Start/Stop buttons to task work lines. Allows to see statistics on Calendar, Graph, Tree views and more""",
     "category": "Project",
-    "images": ["images/timelog.png"],
     "version": "1.0.0",
-    "application": False,
-
+    "images": ['images/timelog.png'],
     "author": "IT-Projects LLC, Dinar Gabbasov",
-    "website": "https://twitter.com/gabbasov_dinar",
+    'website': "https://twitter.com/gabbasov_dinar",
     "license": "GPL-3",
-    "price": 390.00,
+    "price": 390,
     "currency": "EUR",
 
     "depends": [
-        "project_timesheet",
+        "bus",
+        "im_chat",
         "base_action_rule",
+        "project_timesheet",
     ],
     "external_dependencies": {"python": [], "bin": []},
     "data": [
@@ -26,15 +26,6 @@
         "data/project_timelog_data.xml",
         "data/pre_install.yml",
     ],
-    "qweb": [
-    ],
-    "demo": [
-    ],
 
-    "post_load": None,
-    "pre_init_hook": None,
-    "post_init_hook": None,
-
-    "auto_install": False,
-    "installable": True,
+    "installable": False,
 }
