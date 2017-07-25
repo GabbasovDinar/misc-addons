@@ -1,11 +1,42 @@
-$(document).ready(function() {
+odoo.define('project_timelog.timelog', function(require){
 
-    "use strict";
-    var TimeLog = openerp.TimeLog = {};
+    var base_obj = require('mail_base.base');
+
+    var session = require('web.session');
+    var bus = require('bus.bus');
+    var Widget = require('web.Widget');
+    var WebClient = require('web.WebClient');
+    var Model = require('web.Model');
+    var core = require('web.core');
+    var ActionManager = require('web.ActionManager');
     var audio = new Audio();
-    var instance = openerp;
 
-    TimeLog.Manager = openerp.Widget.extend({
+    WebClient.include({
+       show_application: function() {
+           var self = this;
+           this.timelog_widget  = new TimeLog.TimelogWidget(self);
+           this.timelog_widget.appendTo(this.$el.parents().find('.oe_timelog_placeholder'));
+           this._super();
+       }
+    });
+
+    base_obj.chat_manager.is_ready.then(function(){
+        console.log("base_obj.chat_manager", base_obj.chat_manager);
+//        // Add archive channel
+//            base_obj.chat_manager.mail_tools.add_channel({
+//                id: "channel_archive",
+//                name: _lt("Archive"),
+//                type: "static"
+//            });
+//
+//            return $.when();
+        });
+
+    return base_obj.chat_manager;
+
+    var TimeLog = {};
+
+    TimeLog.Manager = Widget.extend({
         init: function (widget) {
             this._super();
             var self = this;
@@ -15,16 +46,14 @@ $(document).ready(function() {
 
             this.channel = JSON.stringify([this.widget.dbname,"project.timelog",String(this.widget.uid)]);
             // start the polling
-            this.bus = openerp.bus.bus;
+            this.bus = bus.bus;
             this.bus.add_channel(this.channel);
             this.bus.on("notification", this, this.on_notification);
             this.bus.start_polling();
         },
         on_notification: function (notification) {
+            console.log("notification", notification);
             var self = this;
-            if (typeof notification[0][0] === 'string') {
-                notification = [notification];
-            }
             for (var i = 0; i < notification.length; i++) {
                 var channel = notification[i][0];
                 var message = notification[i][1];
@@ -34,13 +63,12 @@ $(document).ready(function() {
         on_notification_do: function (channel, message) {
             var self = this;
             var error = false;
-            if (typeof channel != "string") {
-                return false;
+            if (_.isString(channel)) {
+                var channel = JSON.parse(channel);
             }
-            if (channel != this.channel) {
-                return false;
-            }
-            channel = JSON.parse(channel);
+            // if (channel != this.channel) {
+            //     return false;
+            // }
             if (Array.isArray(channel) && channel[1] === 'project.timelog') {
                 try {
                     this.received_message(message);
@@ -50,6 +78,7 @@ $(document).ready(function() {
                 }
             }
         },
+
         received_message: function(message) {
             var self = this;
             if (message.status == "play") {
@@ -63,12 +92,13 @@ $(document).ready(function() {
                 }
                 $('#clock0').css('color','white');
             }
+
             if (message.status == "stop") {
                 this.widget.end_datetime_status = true;
                 this.widget.stop_timer();
                 if (!message.play_a_sound && !message.stopline) {
                     this.audio_format = audio.canPlayType("audio/ogg; codecs=vorbis") ? ".ogg" : ".mp3";
-                    audio.src = openerp.session.url("/project_timelog/static/src/audio/" + "stop" + this.audio_format);
+                    audio.src = session.url("/project_timelog/static/src/audio/" + "stop" + this.audio_format);
                     audio.play();
                 }
                 if (message.play_a_sound && !self.widget.stopline) {
@@ -80,7 +110,7 @@ $(document).ready(function() {
                     $('#clock0').css('color','red');
                     if (self.stopline_audio_stop) {
                         this.audio_format = audio.canPlayType("audio/ogg; codecs=vorbis") ? ".ogg" : ".mp3";
-                        audio.src = openerp.session.url("/project_timelog/static/src/audio/" + "stop" + this.audio_format);
+                        audio.src = session.url("/project_timelog/static/src/audio/" + "stop" + this.audio_format);
                         audio.play();
                     }
                     self.stopline_audio_stop = false;
@@ -106,37 +136,28 @@ $(document).ready(function() {
         },
     });
 
-    TimeLog.TimelogWidget = openerp.Widget.extend({
+    TimeLog.TimelogWidget = Widget.extend({
         init: function(parent){
             this._super(parent);
             var self = this;
-            this.load_server_data();
-
+            this.debug = ($.deparam($.param.querystring()).debug !== undefined);
             this.finish_status = false;
             this.stopline = '';
             this.work_id = '';
             this.task_id = '';
-            this.timelog_id='';
+            this.timelog_id = '';
             this.status = 'stopped';
             this.times = [0,0,0,0];
             this.initial_planed_hours = 0;
-
             this.time_warning_subtasks = 1;
             this.time_subtasks = 1;
-
             this.normal_time_day = 1;
             this.good_time_day = 1;
-
             this.normal_time_week = 1;
             this.good_time_week = 1;
-
             this.timer_status = false;
-
             this.audio_format = '';
-        },
-        start: function() {
-            var self = this;
-            this.load_timer_data();
+            this.load_server_data();
             window.offLineHandler = function(){
                 self.ClientOffLine();
             };
@@ -145,11 +166,13 @@ $(document).ready(function() {
             };
         },
         ClientOffLine: function() {
-            console.log("YOU ARE OFFLINE");
+            if (this.debug) {
+                console.log("YOU ARE OFFLINE");
+            }
             var self = this;
             self.end_datetime_status = true;
             self.audio_format= audio.canPlayType("audio/ogg; codecs=vorbis") ? ".ogg" : ".mp3";
-            audio.src = openerp.session.url("/project_timelog/static/src/audio/"+"stop"+ self.audio_format);
+            audio.src = session.url("/project_timelog/static/src/audio/"+"stop"+ self.audio_format);
             if (self.status == 'running') {
                 audio.play();
             }
@@ -159,23 +182,26 @@ $(document).ready(function() {
             self.show_warn_message(this.warn_message, this.warn_sticky);
         },
         ClientOnLine: function(){
-            console.log("YOU ARE ONLINE");
+            if (this.debug) {
+                console.log("YOU ARE ONLINE");
+            }
             this.warn_message = "You are online";
             this.warn_sticky = true;
             this.show_warn_message(this.warn_message, this.warn_sticky);
         },
         load_server_data: function() {
             var self = this;
-            this.rpc("/timelog/upd", {}).then(function(resultat){
+            return session.rpc("/timelog/upd", {}).then(function(resultat){
                 self.uid = resultat.uid;
                 self.dbname = resultat.dbname;
-                self.c_manager = new openerp.TimeLog.Manager(self);
+                self.c_manager = new TimeLog.Manager(self);
+                self.load_timer_data();
             });
         },
         load_timer_data: function(){
             var self = this;
             this.activate_click();
-            this.rpc("/timelog/init", {}).then(function(resultat){
+            session.rpc("/timelog/init", {}).then(function(resultat){
                 self.timer_status = resultat.timer_status;
                 self.stopline = resultat.stopline;
                 self.task_id = resultat.task_id;
@@ -242,11 +268,11 @@ $(document).ready(function() {
             if (typeof(Audio) === "undefined") {
                 return;
             }
-            this.audio_format= audio.canPlayType("audio/ogg; codecs=vorbis") ? ".ogg" : ".mp3";
+            this.audio_format = audio.canPlayType("audio/ogg; codecs=vorbis") ? ".ogg" : ".mp3";
             this.updateView();
         },
         updateView : function() {
-            var element = document.getElementById("timelog_timer");
+            var element = $("#timelog_timer");
             if(!element) {
                 return false;
             }
@@ -259,7 +285,6 @@ $(document).ready(function() {
             if(!element) {
                 return false;
             }
-
             var formattedTime = this.formatTime(id, time);
             element.innerHTML = formattedTime;
             var self = this;
@@ -326,7 +351,9 @@ $(document).ready(function() {
                 } break;
 
                 default:
-                    console.log("NONE");
+                    if (this.debug) {
+                        console.log("Timer Error");
+                    }
                 break;
             }
         },
@@ -335,26 +362,27 @@ $(document).ready(function() {
             if (self.finish_status) {
                 return false;
             }
-            var model = new openerp.web.Model('project.task.work');
-            model.call("stop_timer", [self.work_id, true, false]);
-            self.finish_status = true;
-            var element = document.getElementById("clock0");
-            this.startAnim(element, 500, 10*500);
-            var id = this.task_id;
-            var parent = self.getParent();
-            var action = {
-                res_id: id,
-                res_model: "project.task",
-                views: [[false, 'form']],
-                type: 'ir.actions.act_window',
-                target: 'current',
-                flags: {
-                    action_buttons: true,
-                }
-            };
-            parent.action_manager.do_action(action);
-            this.end_datetime_status = true;
-            this.stop_timer();
+            var model = new Model('account.analytic.line');
+            model.call("stop_timer", [self.work_id, true, false]).then(function(){
+                self.finish_status = true;
+                var element = document.getElementById("clock0");
+                self.startAnim(element, 500, 10*500);
+                var id = self.task_id;
+                var parent = self.getParent();
+                var action = {
+                    res_id: id,
+                    res_model: "project.task",
+                    views: [[false, 'form']],
+                    type: 'ir.actions.act_window',
+                    target: 'current',
+                    flags: {
+                        action_buttons: true,
+                    }
+                };
+                parent.action_manager.do_action(action);
+                self.end_datetime_status = true;
+                self.stop_timer();
+            });
         },
         addClass : function(id, className) {
             var clockClass = "#clock" + id;
@@ -405,7 +433,9 @@ $(document).ready(function() {
                 return false;
             }
             if (this.stopline) return false;
-            console.log("play");
+            if (this.debug) {
+                console.log("Play");
+            }
             this.add_favicon();
             var self = this;
             this.status = 'running';
@@ -421,7 +451,9 @@ $(document).ready(function() {
                     return false;
                 }
             }
-            console.log("stop");
+            if (this.debug) {
+                console.log("Stop");
+            }
             this.add_favicon();
             this.status = 'stopped';
             for (var i = 0; i < 4; i++) {
@@ -449,7 +481,7 @@ $(document).ready(function() {
         },
         playAudio: function(id) {
             var audio_name = id + '.' + this.audio_format;
-            audio.src = openerp.session.url("/project_timelog/static/src/audio/"+id+ this.audio_format);
+            audio.src = session.url("/project_timelog/static/src/audio/"+id+ this.audio_format);
             audio.play();
         },
         add_title: function(first_timer_name, task_name, description_second_timer) {
@@ -467,8 +499,8 @@ $(document).ready(function() {
         },
         timer_pause: function() {
             var self = this;
-            var model_subtask = new openerp.web.Model('project.task.work');
-            if (self.status=="running" && !self.finish_status) {
+            var model_subtask = new Model('account.analytic.line');
+            if (self.status == "running" && !self.finish_status) {
                 model_subtask.call("stop_timer", [self.work_id]);
                 $('#clock0').css('color','rgb(152, 152, 152)');
             } else {
@@ -533,14 +565,10 @@ $(document).ready(function() {
 
         }
     });
-
-    instance.web.WebClient.include({
-        show_application: function() {
-            var self = this;
-            this.timelog_widget  = new TimeLog.TimelogWidget(self);
-            this.timelog_widget.appendTo(this.$el.parents().find('.oe_timelog_placeholder'));
-            return this._super();
-        },
-    });
+    function WarnMessage (parent, action) {
+        var params = action.params || {};
+        parent.do_warn(params.title, params.text);
+    }
+    core.action_registry.add("action_warn", WarnMessage);
+    return TimeLog;
 });
-

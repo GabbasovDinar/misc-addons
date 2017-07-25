@@ -15,6 +15,7 @@ class TimelogConfigSettings(models.TransientModel):
 
     @api.multi
     def set_custom_parameters(self):
+        self.ensure_one()
         config_parameters = self.env['ir.config_parameter']
         for record in self:
             config_parameters.set_param(key="project_timelog.time_subtasks", value=record.time_subtasks)
