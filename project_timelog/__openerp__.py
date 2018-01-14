@@ -16,7 +16,6 @@
     "depends": [
         "project_timesheet",
         "base_action_rule",
-        "mail_base",
     ],
     "external_dependencies": {"python": [], "bin": []},
     "data": [
