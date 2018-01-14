@@ -86,7 +86,8 @@ class ProjectTimelog(models.Model):
 
 
 class Task(models.Model):
-    _inherit = ["project.task"]
+    _inherit = "project.task"
+
     datetime_stopline = fields.Datetime(string="Stopline", select=True, track_visibility='onchange', copy=False)
     _track = {
         'datetime_stopline': {
@@ -180,9 +181,10 @@ class Users(models.Model):
     active_task_id = fields.Many2one("project.task", "Task", default=None)
     timer_status = fields.Boolean(default=False)
 
-    # This function is called every 5 minut
+    # This function is called every 5 minutes
     @api.model
     def check_stop_timer(self):
+        # TODO: check it
         status = self.search([('im_status', '=', 'offline')])
         for r in status:
             r.active_work_id.sudo(r).stop_timer(play_a_sound=False)
@@ -216,12 +218,22 @@ class account_analytic_line(models.Model):
     task_allow_logs = fields.Boolean(related='task_id.stage_id.allow_log_time', readonly=True)
     user_current = fields.Boolean(compute="_compute_user_current", default=True)
 
-    _sql_constraints = [
-        ('name_task_uniq', 'unique (name,stage_id,task_id)', 'The name of the subtask must be unique per stage!')
-    ]
-#     hours = fields.Float(string='Time Spent', compute="_compute_hours", default=0)
+    # _sql_constraints = [
+    #     ('name_task_uniq', 'unique (name,stage_id,task_id)', 'The name of the subtask must be unique per stage!')
+    # ]
+    # hours = fields.Float(string='Time Spent', compute="_compute_hours", default=0)
 #     unit_amount
 #
+    # analytic_account_id = fields.Many2one('account.analytic.account', 'Analytic Account',
+    #                                       related='task_id.project_id.analytic_account_id',
+    #                                       readonly=True)
+    combined_name = fields.Char('Task and Summary', compute="_compute_combined_name")
+
+    @api.multi
+    def _compute_combined_name(self):
+        for r in self:
+            r.combined_name = "%s: %s" % (r.task_id.name, r.name)
+
     @api.multi
     def _compute_user_current(self):
         for r in self:
@@ -375,7 +387,6 @@ class account_analytic_line(models.Model):
                 'text': message,
             }
         }
-
 
     # This function is called every day for 00:00:00 hours
     @api.model

@@ -1,2 +1,2 @@
-pandas
 icalendar
+boto3
