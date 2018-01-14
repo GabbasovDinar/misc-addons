@@ -1,12 +1,14 @@
 odoo.define('project_timelog.timelog', function(require){
 
     var bus = require('bus.bus');
+
     var session = require('web.session');
     session.rpc('/web/session/get_session_info').then(function(res){
         var channel = JSON.stringify([res.db,"project.timelog",String(res.uid)]);
             // add new channel
             bus.bus.add_channel(channel);
     });
+
     var Widget = require('web.Widget');
     var WebClient = require('web.WebClient');
     var Model = require('web.Model');
@@ -15,45 +17,24 @@ odoo.define('project_timelog.timelog', function(require){
     var ActionManager = require('web.ActionManager');
     var TimeLog = {};
 
+
     WebClient.include({
        show_application: function() {
-           var self = this;
-           this.timelog_widget = new TimeLog.TimelogWidget(self);
-           this.timelog_widget.appendTo(this.$el.parents().find('.oe_timelog_placeholder'));
+           var timelog_widget = new TimeLog.TimelogWidget(this);
+           timelog_widget.appendTo(this.$el.parents().find('.oe_timelog_placeholder'));
            this._super();
        }
     });
-
-//    base_obj.chat_manager.is_ready.then(function(){
-//        console.log("base_obj.chat_manager", base_obj.chat_manager);
-//        // Add archive channel
-//            base_obj.chat_manager.mail_tools.add_channel({
-//                id: "channel_archive",
-//                name: _lt("Archive"),
-//                type: "static"
-//            });
-//
-//            return $.when();
-//        });
-//    return base_obj.chat_manager;
-
-
     TimeLog.Manager = Widget.extend({
         init: function (widget) {
-            var self = this;
             this._super();
             this.stopline_audio_stop = true;
             this.widget = widget;
-            // bus channel
-//            this.channel = JSON.stringify([this.widget.dbname,"project.timelog",String(this.widget.uid)]);
-            // start the polling
             this.bus = bus.bus;
-//            this.bus.add_channel(this.channel);
             this.bus.on("notification", this, this.on_notification);
-//            this.bus.start_polling();
+            this.bus.start_polling();
         },
         on_notification: function (notification) {
-            var self = this;
             for (var i = 0; i < notification.length; i++) {
                 var channel = notification[i][0];
                 var message = notification[i][1];
@@ -61,7 +42,6 @@ odoo.define('project_timelog.timelog', function(require){
             }
         },
         on_notification_do: function (channel, message) {
-            var self = this;
             var error = false;
             if (_.isString(channel)) {
                 var channel = JSON.parse(channel);
@@ -76,14 +56,12 @@ odoo.define('project_timelog.timelog', function(require){
             }
         },
         received_message: function(message) {
-            var self = this;
             if (message.status == "play") {
                 if (message.active_work_id === this.widget.config.work_id) {
                     this.widget.start_timer();
                 } else {
                     this.widget.finish_status = false;
                     this.widget.load_timer_data();
-//                    this.widget.start_timer();
                 }
             } else if (message.status == "stop") {
                 this.widget.end_datetime_status = true;
@@ -95,16 +73,16 @@ odoo.define('project_timelog.timelog', function(require){
 
 
                 if (!message.play_a_sound && !message.stopline) {
-                    self.widget.change_audio("stop");
+                    this.widget.change_audio("stop");
                 }
-                if (message.play_a_sound && !self.widget.stopline) {
+                if (message.play_a_sound && !this.widget.stopline) {
                     $('#clock0').css('color','rgb(152, 152, 152)');
-                } else if (self.widget.stopline) {
+                } else if (this.widget.stopline) {
                     $('#clock0').css('color','red');
                 }
                 if (message.stopline) {
                     $('#clock0').css('color','red');
-                    if (self.stopline_audio_stop) {
+                    if (this.stopline_audio_stop) {
                         this.widget.change_audio("stop");
                     }
                     this.stopline_audio_stop = false;
@@ -119,10 +97,10 @@ odoo.define('project_timelog.timelog', function(require){
                 if (year == message.time.year && month == message.time.month && day == message.time.day) {
                     if (minute >= message.time.minute) {
                         $('#clock0').css('color','orange');
-                        if (self.song_on) {
-                            self.widget.change_audio(0);
+                        if (this.song_on) {
+                            this.widget.change_audio(0);
                         }
-                        self.stopline_audio_warning = false;
+                        this.stopline_audio_warning = false;
                     }
                 }
             }
@@ -147,7 +125,7 @@ odoo.define('project_timelog.timelog', function(require){
                 self.ClientOffLine();
             });
 
-            this.load_server_data();
+            this.load_timer_data();
 
             window.offLineHandler = function(){
                 self.ClientOffLine();
@@ -178,19 +156,9 @@ odoo.define('project_timelog.timelog', function(require){
             this.audio.src = session.url("/project_timelog/static/src/audio/" + name + this.audio_format);
             this.audio.play();
         },
-        load_server_data: function() {
-            var self = this;
-            return session.rpc("/timelog/upd").then(function(data){
-                self.uid = data.uid;
-                self.dbname = data.dbname;
-                self.c_manager = new TimeLog.Manager(self);
-                self.load_timer_data();
-            });
-        },
         load_timer_data: function(){
             var self = this;
             this.activate_click();
-
             session.rpc("/timelog/init").then(function(data){
                 self.config = data;
                 self.times = [
@@ -376,10 +344,9 @@ odoo.define('project_timelog.timelog', function(require){
             }, 1000);
         },
         countDownTimer: function() {
-            var self = this;
             for (var i = 0; i < 4; i++) {
-              self.times[i]++;
-              self.updateClock(i, self.times[i]);
+              this.times[i]++;
+              this.updateClock(i, this.times[i]);
             }
         },
         start_timer: function(){
