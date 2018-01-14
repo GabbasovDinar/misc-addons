@@ -66,12 +66,6 @@ odoo.define('project_timelog.timelog', function(require){
             } else if (message.status == "stop") {
                 this.widget.end_datetime_status = true;
                 this.widget.stop_timer();
-
-
-
-
-
-
                 if (!message.play_a_sound && !message.stopline) {
                     this.widget.change_audio("stop");
                 }
@@ -117,22 +111,14 @@ odoo.define('project_timelog.timelog', function(require){
             this.status = 'stopped';
 
             // check connection with server
-            Offline.options = {checks: {xhr: {url: '/timelog/upd'}}};
+            Offline.options = {checks: {xhr: {url: '/timelog/connection'}}};
             Offline.on("up", function(){
                 self.ClientOnLine();
             });
             Offline.on("down", function(){
                 self.ClientOffLine();
             });
-
             this.load_timer_data();
-
-            window.offLineHandler = function(){
-                self.ClientOffLine();
-            };
-            window.onLineHandler = function(){
-                self.ClientOnLine();
-            };
         },
         ClientOffLine: function() {
             if (this.debug) {
