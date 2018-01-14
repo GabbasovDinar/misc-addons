@@ -176,10 +176,3 @@ class TimelogController(http.Controller):
     @http.route('/timelog/connection', type='http', auth="public")
     def connection(self, **kwargs):
         return True
-
-    @http.route('/timelog/upd', type="json", auth="public")
-    def get_server_data(self, **kwargs):
-        return {
-            "uid": http.request.env.user.id,
-            "dbname": http.request.cr.dbname,
-        }

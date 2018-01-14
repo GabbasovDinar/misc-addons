@@ -4,7 +4,7 @@ odoo.define('project_timelog.timelog', function(require){
     var session = require('web.session');
     session.rpc('/web/session/get_session_info').then(function(res){
         var channel = JSON.stringify([res.db,"project.timelog",String(res.uid)]);
-            // start the polling
+            // add new channel
             bus.bus.add_channel(channel);
     });
     var Widget = require('web.Widget');
@@ -83,7 +83,7 @@ odoo.define('project_timelog.timelog', function(require){
                 } else {
                     this.widget.finish_status = false;
                     this.widget.load_timer_data();
-                    this.widget.start_timer();
+//                    this.widget.start_timer();
                 }
             } else if (message.status == "stop") {
                 this.widget.end_datetime_status = true;
@@ -95,9 +95,7 @@ odoo.define('project_timelog.timelog', function(require){
 
 
                 if (!message.play_a_sound && !message.stopline) {
-                    this.audio_format = audio.canPlayType("audio/ogg; codecs=vorbis") ? ".ogg" : ".mp3";
-                    audio.src = session.url("/project_timelog/static/src/audio/" + "stop" + this.audio_format);
-                    audio.play();
+                    self.widget.change_audio("stop");
                 }
                 if (message.play_a_sound && !self.widget.stopline) {
                     $('#clock0').css('color','rgb(152, 152, 152)');
@@ -457,7 +455,7 @@ odoo.define('project_timelog.timelog', function(require){
             }
         },
         go_to: function(event, status) {
-            var id = this.task_id;
+            var id = this.config.task_id;
             var parent = this.getParent();
             var action = false;
             var context = false;
