@@ -1,14 +1,7 @@
 odoo.define('project_timelog.timelog', function(require){
 
     var bus = require('bus.bus');
-
     var session = require('web.session');
-    session.rpc('/web/session/get_session_info').then(function(res){
-        var channel = JSON.stringify([res.db,"project.timelog",String(res.uid)]);
-            // add new channel
-            bus.bus.add_channel(channel);
-    });
-
     var Widget = require('web.Widget');
     var WebClient = require('web.WebClient');
     var Model = require('web.Model');
@@ -16,6 +9,11 @@ odoo.define('project_timelog.timelog', function(require){
     var _t = core._t;
     var ActionManager = require('web.ActionManager');
     var TimeLog = {};
+
+    // prevent bus to be started by chat_manager.js
+    bus.ERROR_DELAY = 10000;
+    // fake value to ignore start_polling call
+    bus.bus.activated = true;
 
 
     WebClient.include({
@@ -30,8 +28,12 @@ odoo.define('project_timelog.timelog', function(require){
             this._super();
             this.stopline_audio_stop = true;
             this.widget = widget;
+            var channel = JSON.stringify([session.db,"project.timelog",String(session.uid)]);
+
             this.bus = bus.bus;
+            this.bus.add_channel(channel);
             this.bus.on("notification", this, this.on_notification);
+            this.bus.activated = false;
             this.bus.start_polling();
         },
         on_notification: function (notification) {
