@@ -118,6 +118,7 @@ odoo.define('project_timelog.timelog', function(require){
             Offline.on("down", function(){
                 self.ClientOffLine();
             });
+            this.c_manager = new TimeLog.Manager(this);
             this.load_timer_data();
         },
         ClientOffLine: function() {
