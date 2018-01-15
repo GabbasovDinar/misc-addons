@@ -261,7 +261,8 @@ odoo.define('project_timelog.timelog', function(require){
                         this.change_audio(2);
                     } else if (this.times[3] > this.config.normal_time_week){
                         $('#clock3').css('color','#00f900');
-                    } else if (this.times[3] == this.config.good_time_week) {
+                    }
+                    if (this.times[3] == this.config.good_time_week) {
                         $('#clock3').css('color','rgb(0, 144, 249)');
                         this.change_audio(3);
                     } else if (this.times[3] >= this.config.good_time_week) {
