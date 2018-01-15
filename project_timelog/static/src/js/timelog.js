@@ -94,7 +94,7 @@ odoo.define('project_timelog.timelog', function(require){
                     if (minute >= message.time.minute) {
                         $('#clock0').css('color','orange');
                         if (this.song_on) {
-                            this.widget.change_audio(0);
+                            this.widget.change_audio("warning");
                         }
                         this.stopline_audio_warning = false;
                     }
@@ -110,6 +110,9 @@ odoo.define('project_timelog.timelog', function(require){
             this.debug = ($.deparam($.param.querystring()).debug !== undefined);
             this.audio = new Audio();
             this.audio_format = this.audio.canPlayType("audio/ogg; codecs=vorbis") ? ".ogg" : ".mp3";
+
+            // the error sound
+            this.error = new Audio(session.url("/project_timelog/static/src/audio/offline" + this.audio_format));
             this.status = 'stopped';
 
             // check connection with server
@@ -128,7 +131,7 @@ odoo.define('project_timelog.timelog', function(require){
                 console.log("You are offline.");
             }
             if (this.status == 'running') {
-                this.change_audio('stop');
+                this.error.play();
             }
             this.end_datetime_status = true;
             this.stop_timer();
@@ -139,10 +142,11 @@ odoo.define('project_timelog.timelog', function(require){
                 console.log("You are online.");
             }
             this.change_audio('online');
+            this.load_timer_data();
             this.show_notify_message(_t("You are online"));
         },
         change_audio: function(name) {
-            this.audio.src = session.url("/project_timelog/static/src/audio/" + name + this.audio_format);
+            this.audio.src = session.url("/project_timelog/static/src/audio/" + name + this.audio_format) || this.stop_src;
             this.audio.play();
         },
         load_timer_data: function(){
@@ -212,7 +216,7 @@ odoo.define('project_timelog.timelog', function(require){
                     var color = false;
                     if (this.times[0] == this.config.time_warning_subtasks) {
                         color = "orange";
-                        this.change_audio(0);
+                        this.change_audio("warning");
                     } else if (this.times[0] > this.config.time_warning_subtasks) {
                         color = "orange";
                     } else if ( this.times[0] >= this.config.time_subtasks || this.config.stopline){
@@ -371,7 +375,7 @@ odoo.define('project_timelog.timelog', function(require){
             element.animTimer = setInterval(function () {
                 if (element.style.display == "none")  {
                     element.style.display = "";
-                    self.change_audio(1);
+                    self.change_audio("stop");
                 } else {
                     element.style.display = "none";
                 }

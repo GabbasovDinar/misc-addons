@@ -168,14 +168,16 @@ class Task(models.Model):
                         'task_id': w.task_id.id,
                         'user_id': w.user_id.id,
                         'company_id': w.company_id.id,
+                        'account_id': w.account_id.id
                     }
                     new_work = r.env["account.analytic.line"].sudo().create(vals)
 
+                # run exist timer
                 new_work.sudo(w.user_id).play_timer()
 
 
 class Users(models.Model):
-    _inherit = ["res.users"]
+    _inherit = "res.users"
 
     active_work_id = fields.Many2one("account.analytic.line", "Work", default=None)
     active_task_id = fields.Many2one("project.task", "Task", default=None)
@@ -204,29 +206,27 @@ class Users(models.Model):
 
 
 class ProjectTaskType(models.Model):
-    _inherit = ["project.task.type"]
+    _inherit = "project.task.type"
 
     allow_log_time = fields.Boolean(default=True)
 
 
-class account_analytic_line(models.Model):
-    _inherit = ["account.analytic.line"]
+class AccountAnalyticLine(models.Model):
+    _inherit = "account.analytic.line"
 
     stage_id = fields.Many2one("project.task.type", "Stage")
     timelog_ids = fields.One2many("project.timelog", "work_id", "Timelog")
     status = fields.Char(string="Status", default="active")
-    task_allow_logs = fields.Boolean(related='task_id.stage_id.allow_log_time', readonly=True)
+    task_allow_logs = fields.Boolean(related='stage_id.allow_log_time', readonly=True)
     user_current = fields.Boolean(compute="_compute_user_current", default=True)
+    project_id = fields.Many2one(readonly=True, related='task_id.project_id', store=True)
 
-    # _sql_constraints = [
-    #     ('name_task_uniq', 'unique (name,stage_id,task_id)', 'The name of the subtask must be unique per stage!')
-    # ]
-    # hours = fields.Float(string='Time Spent', compute="_compute_hours", default=0)
-#     unit_amount
-#
-    # analytic_account_id = fields.Many2one('account.analytic.account', 'Analytic Account',
-    #                                       related='task_id.project_id.analytic_account_id',
-    #                                       readonly=True)
+    _sql_constraints = [
+        ('name_task_uniq', 'unique (name,stage_id,task_id)', 'The name of the subtask must be unique per stage!')
+    ]
+
+    unit_amount_computed = fields.Float(string='Time Spent', compute="_compute_unit_amount", default=0)
+
     combined_name = fields.Char('Task and Summary', compute="_compute_combined_name")
 
     @api.multi
@@ -242,22 +242,22 @@ class account_analytic_line(models.Model):
             else:
                 r.user_current = False
 
-#     @api.multi
-#     @api.depends("timelog_ids.end_datetime", "timelog_ids.time_correction")
-#     def _compute_hours(self):
-#         for r in self:
-#             if not r.timelog_ids:
-#                 return False
-#             sum_timelog = 0.00
-#             timelog = r.env.user.active_work_id.timelog_ids
-#             if not timelog:
-#                 return False
-#             if timelog[-1].end_datetime is False:
-#                 timelog = timelog[:-1]
-#             for e in timelog:
-#                 sum_timelog = sum_timelog + e.corrected_duration
-#             r.hours = float(sum_timelog)
-#
+    @api.multi
+    @api.depends("timelog_ids.end_datetime", "timelog_ids.time_correction")
+    def _compute_unit_amount(self):
+        for r in self:
+            if not r.timelog_ids:
+                return False
+            sum_timelog = 0.00
+            timelog = r.env.user.active_work_id.timelog_ids
+            if not timelog:
+                return False
+            if timelog[-1].end_datetime is False:
+                timelog = timelog[:-1]
+            for e in timelog:
+                sum_timelog = sum_timelog + e.corrected_duration
+            r.unit_amount_computed = float(sum_timelog)
+
     @api.model
     def create(self, vals):
         task = self.env['project.task'].browse(vals.get('task_id'))
@@ -268,10 +268,25 @@ class account_analytic_line(models.Model):
             vals['user_id'] = self.env.user.id
         if 'user_id' not in vals:
             vals['user_id'] = self.env.user.id
-        # vals['hours'] = 0.00
-        # if 'hours' in vals and (not vals['hours']):
-        #     vals['hours'] = 0.00
-        return super(account_analytic_line, self).create(vals)
+        vals['unit_amount_computed'] = 0.00
+        if 'unit_amount_computed' in vals and (not vals['unit_amount_computed']):
+            vals['unit_amount_computed'] = 0.00
+        return super(AccountAnalyticLine, self).create(vals)
+
+    @api.multi
+    def write(self, vals):
+        if 'unit_amount' in vals:
+            print vals['unit_amount']
+            print vals
+            print "======================================="
+
+        res = super(AccountAnalyticLine, self).write(vals)
+        # #if country changed to fr, create the securisation sequence
+        # for company in self:
+        #     if company._is_accounting_unalterable():
+        #         sequence_fields = ['l10n_fr_secure_sequence_id']
+        #         company._create_secure_sequence(sequence_fields)
+        return res
 #
     @api.multi
     def play_timer(self):
@@ -366,6 +381,9 @@ class account_analytic_line(models.Model):
             r.env["project.timelog"].search([("id", '=', last_timelog_id)]).write({
                 "end_datetime": datetime.datetime.now(),
             })
+
+            if self.unit_amount_computed:
+                self.unit_amount = self.unit_amount_computed
 
             notifications = []
             message = {"status": "stop", "active_work_id": r.id, "active_task_id": r.task_id.id, "play_a_sound": play_a_sound, "stopline": stopline}

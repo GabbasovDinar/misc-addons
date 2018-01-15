@@ -14,8 +14,9 @@
     "currency": "EUR",
 
     "depends": [
-        "project_timesheet",
+        "project_issue_sheet",
         "base_action_rule",
+        "bus",
     ],
     "external_dependencies": {"python": [], "bin": []},
     "data": [
