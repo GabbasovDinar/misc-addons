@@ -3,6 +3,8 @@ import datetime
 from openerp import models, fields, api
 from openerp.exceptions import Warning as UserError
 from openerp.tools.translate import _
+from openerp.addons.bus.models.bus_presence import AWAY_TIMER
+from openerp.addons.bus.models.bus_presence import DISCONNECTION_TIMER
 
 
 class ProjectTimelog(models.Model):
@@ -182,12 +184,29 @@ class Users(models.Model):
     active_work_id = fields.Many2one("account.analytic.line", "Work", default=None)
     active_task_id = fields.Many2one("project.task", "Task", default=None)
     timer_status = fields.Boolean(default=False)
+    im_status = fields.Char(search='_search_im_status')
+
+    def _search_im_status(self, operator, value):
+        ids = map(lambda x: x.id, self.env["res.users"].search([]))
+        value_ids = []
+        self.env.cr.execute("""
+            SELECT
+                user_id as id,
+                CASE WHEN age(now() AT TIME ZONE 'UTC', last_poll) > interval %s THEN 'offline'
+                     WHEN age(now() AT TIME ZONE 'UTC', last_presence) > interval %s THEN 'away'
+                     ELSE 'online'
+                END as status
+            FROM bus_presence
+            WHERE user_id IN %s""", ("%s seconds" % DISCONNECTION_TIMER, "%s seconds" % AWAY_TIMER, tuple(ids)))
+        res = dict(((status['id'], status['status']) for status in self.env.cr.dictfetchall()))
+        if operator == '=':
+            value_ids = [id for id in ids if res.get(id, 'offline') == value]
+        return [('id', 'in', value_ids)]
 
     # This function is called every 5 minutes
     @api.model
     def check_stop_timer(self):
-        # TODO: check it
-        status = self.search([('im_status', '=', 'offline')])
+        status = self.env["res.users"].search([('im_status', '=', 'offline')])
         for r in status:
             r.active_work_id.sudo(r).stop_timer(play_a_sound=False)
         user = self.search([("active_work_id.status", "=", "play")])

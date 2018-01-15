@@ -7,7 +7,7 @@
             <field name="name">Offline stop timer</field>
             <field name="active" eval="True" />
             <field name="user_id" ref="base.user_root" />
-            <field name="interval_number">5</field>
+            <field name="interval_number">1</field>
             <field name="interval_type">minutes</field>
             <field name="numbercall">-1</field>
             <field name="model" eval="'res.users'" />
@@ -54,9 +54,9 @@
             <field name="interval_number">1</field>
             <field name="interval_type">minutes</field>
             <field name="numbercall">-1</field>
-            <field name="model" eval="'project.task'" />
-            <field name="function" eval="'stopline_timer'" />
-            <field name="args" eval="" />
+            <field name="model">project.task</field>
+            <field name="function">stopline_timer</field>
+            <field name="args">()</field>
             <field name="priority" eval="4" />
         </record>
 

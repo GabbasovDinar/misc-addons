@@ -154,7 +154,6 @@ odoo.define('project_timelog.timelog', function(require){
             this.activate_click();
             session.rpc("/timelog/init").then(function(data){
                 self.config = data;
-                console.log(data)
                 self.times = [
                     data.init_log_timer,
                     data.init_task_timer,
