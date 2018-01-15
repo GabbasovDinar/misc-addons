@@ -154,6 +154,7 @@ odoo.define('project_timelog.timelog', function(require){
             this.activate_click();
             session.rpc("/timelog/init").then(function(data){
                 self.config = data;
+                console.log(data)
                 self.times = [
                     data.init_log_timer,
                     data.init_task_timer,
@@ -219,7 +220,8 @@ odoo.define('project_timelog.timelog', function(require){
                         this.change_audio("warning");
                     } else if (this.times[0] > this.config.time_warning_subtasks) {
                         color = "orange";
-                    } else if ( this.times[0] >= this.config.time_subtasks || this.config.stopline){
+                    }
+                    if ( this.times[0] >= this.config.time_subtasks || this.config.stopline){
                         color = "red";
                         this.addClass(0, "expired");
                         this.timerTimeLimited();
@@ -372,10 +374,10 @@ odoo.define('project_timelog.timelog', function(require){
         },
         startAnim: function (element, interval, time) {
             var self = this;
+            self.change_audio("stop");
             element.animTimer = setInterval(function () {
                 if (element.style.display == "none")  {
                     element.style.display = "";
-                    self.change_audio("stop");
                 } else {
                     element.style.display = "none";
                 }

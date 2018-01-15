@@ -275,41 +275,33 @@ class AccountAnalyticLine(models.Model):
 
     @api.multi
     def write(self, vals):
-        if 'unit_amount' in vals:
-            print vals['unit_amount']
-            print vals
-            print "======================================="
+        unit_amount_computed = vals['unit_amount_computed'] if 'unit_amount_computed' in vals else self.unit_amount_computed
+        if 'unit_amount' in vals and ('task_id' in vals or self.task_id) and vals['unit_amount'] > unit_amount_computed:
+            vals['unit_amount'] = self.unit_amount
+        return super(AccountAnalyticLine, self).write(vals)
 
-        res = super(AccountAnalyticLine, self).write(vals)
-        # #if country changed to fr, create the securisation sequence
-        # for company in self:
-        #     if company._is_accounting_unalterable():
-        #         sequence_fields = ['l10n_fr_secure_sequence_id']
-        #         company._create_secure_sequence(sequence_fields)
-        return res
-#
     @api.multi
     def play_timer(self):
         if self.env.user.id != self.user_id.id:
-            return self.show_warning_message(title=_("Warning!"),
+            return self.show_warning_message(title=_("Warning."),
                                              message=_("Current user is not match user with solved task."))
         if self.env.user.timer_status is True:
-            return self.show_warning_message(title=_("Error!"),
+            return self.show_warning_message(title=_("Error."),
                                              message=_("Please, stop previous timer."))
         project_task = self.task_id
         if project_task:
             if project_task.stage_id.allow_log_time is False:
-                return self.show_warning_message(title=_("Error!"),
+                return self.show_warning_message(title=_("Error."),
                                                  message=_("In the current state of the task can not be created timelogs."))
         if self.stage_id.id != project_task.stage_id.id:
-            return self.show_warning_message(title=_("Error!"),
+            return self.show_warning_message(title=_("Error."),
                                              message=_("Current task stage different from the stage subtasks."))
 
         datetime_stopline = project_task.datetime_stopline
         if datetime_stopline is not False and self.task_id.id == self.env.user.active_task_id:
             stopline_date = datetime.datetime.strptime(datetime_stopline, "%Y-%m-%d %H:%M:%S")
             if stopline_date <= datetime.datetime.now():
-                return self.show_warning_message(title=_("Error!"),
+                return self.show_warning_message(title=_("Error."),
                                                  message=_("Unable to create logs until it is modified or deleted stopline."))
         stage = project_task.stage_id.id
         corrected_duration = self.env["project.timelog"].search([("work_id", "=", self.id), ("user_id", "=", self.env.user.id)])
@@ -331,7 +323,7 @@ class AccountAnalyticLine(models.Model):
             date_object = datetime.datetime.strptime(first_timelog[0].end_datetime, "%Y-%m-%d %H:%M:%S")
             if date_object is not False and date_object.day != current_date.day:
                 # there are timelogs yesterday
-                return self.show_warning_message(title=_("Error!"),
+                return self.show_warning_message(title=_("Error."),
                                                  message=_("Yesterday's timelogs."))
         self.write({'status': 'play'})
 
@@ -361,13 +353,13 @@ class AccountAnalyticLine(models.Model):
         for r in self:
             if r.env.user.id != r.user_id.id:
                 # current user is not match user with solved task
-                return self.show_warning_message(title=_("Warning!"),
+                return self.show_warning_message(title=_("Warning."),
                                                  message=_("Current user is not match user with solved task."))
 
             timelog = r.env.user.active_work_id.timelog_ids
 
             if timelog[-1].end_datetime is not False:
-                return self.show_warning_message(title=_("Warning!"),
+                return self.show_warning_message(title=_("Warning."),
                                                  message=_("The timer already has stopped."))
             if status is True:
                 r.write({'status': 'nonactive'})

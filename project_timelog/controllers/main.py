@@ -132,13 +132,11 @@ class TimelogController(http.Controller):
         # get configs for timer
         time_subtasks = int(round(float(config.get_param("project_timelog.time_subtasks"))*convert_sec, 0))
         time_warning_subtasks = time_subtasks - int(
-            round(float(config.get_param("project_timelog.time_warning_subtasks")) * convert_sec, 0)),
-
-        normal_time_day = int(round(float(config.get_param("project_timelog.normal_time_day")) * convert_sec, 0)),
-        good_time_day = int(round(float(config.get_param("project_timelog.good_time_day")) * convert_sec, 0)),
-
-        normal_time_week = int(round(float(config.get_param("project_timelog.normal_time_week")) * convert_sec, 0)),
-        good_time_week = int(round(float(config.get_param("project_timelog.good_time_week")) * convert_sec, 0)),
+            round(float(config.get_param("project_timelog.time_warning_subtasks")) * convert_sec, 0))
+        normal_time_day = int(round(float(config.get_param("project_timelog.normal_time_day")) * convert_sec, 0))
+        good_time_day = int(round(float(config.get_param("project_timelog.good_time_day")) * convert_sec, 0))
+        normal_time_week = int(round(float(config.get_param("project_timelog.normal_time_week")) * convert_sec, 0))
+        good_time_week = int(round(float(config.get_param("project_timelog.good_time_week")) * convert_sec, 0))
 
         end_datetime_status = True
         if timelogs and timelogs[-1].end_datetime is False:
@@ -151,10 +149,10 @@ class TimelogController(http.Controller):
             "planned_hours": int(round(task.planned_hours*convert_sec, 0)),
             "stopline": timer_stopline,
 
-            "init_log_timer": log_timer,
-            "init_task_timer": task_timer,
-            "init_day_timer": day_timer,
-            "init_week_timer": week_timer,
+            "init_log_timer": int(log_timer),
+            "init_task_timer": int(task_timer),
+            "init_day_timer": int(day_timer),
+            "init_week_timer": int(week_timer),
 
             "time_subtasks": time_subtasks,
             "time_warning_subtasks": time_warning_subtasks,
