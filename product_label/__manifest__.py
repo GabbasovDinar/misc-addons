@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# Copyright 2018 Dinar Gabbasov <https://it-projects.info/team/GabbasovDinar>
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html).
 {
     "name": """Product Label""",
     "summary": """Use different labels of products for reports""",
@@ -12,15 +14,20 @@
     "support": "apps@it-projects.info",
     "website": "https://it-projects.info/team/GabbasovDinar",
     "license": "LGPL-3",
+    # "price": 9.00,
+    # "currency": "EUR",
 
     "depends": [
         "product",
     ],
     "external_dependencies": {"python": [], "bin": []},
     "data": [
+        "security/ir.model.access.csv",
+        "wizard/product_label_wizard_view.xml",
+        "report/product_label_report_template.xml",
+        "report/product_label_report.xml",
         "views/product_template_view.xml",
         "views/product_label_view.xml",
-        "report/product_product_template.xml",
     ],
     "qweb": [
     ],
