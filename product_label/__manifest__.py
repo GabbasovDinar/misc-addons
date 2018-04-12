@@ -22,6 +22,7 @@
     ],
     "external_dependencies": {"python": [], "bin": []},
     "data": [
+        "data/product_label_data.xml",
         "security/ir.model.access.csv",
         "wizard/product_label_wizard_view.xml",
         "report/product_label_report_template.xml",
