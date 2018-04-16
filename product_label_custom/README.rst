@@ -23,7 +23,7 @@ Maintainers
 -----------
 * `IT-Projects LLC <https://it-projects.info>`__
 
-      To get a guaranteed support you are kindly requested to purchase the module at `odoo apps store <https://apps.odoo.com/apps/modules/10.0/product_label/>`__.
+      To get a guaranteed support you are kindly requested to purchase the module at `odoo apps store <https://apps.odoo.com/apps/modules/10.0/product_label_custom/>`__.
 
       Thank you for understanding!
 
@@ -34,7 +34,7 @@ Further information
 
 Demo: http://runbot.it-projects.info/demo/misc-addons/10.0
 
-HTML Description: https://apps.odoo.com/apps/modules/10.0/product_label/
+HTML Description: https://apps.odoo.com/apps/modules/10.0/product_label_custom/
 
 Usage instructions: `<doc/index.rst>`_
 

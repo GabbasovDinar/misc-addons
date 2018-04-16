@@ -8,7 +8,7 @@ from odoo.exceptions import UserError
 
 
 class ReportProductLabel(models.AbstractModel):
-    _name = 'report.product_label.report_product_label'
+    _name = 'report.product_label_custom.report_product_label'
     
     @api.model
     def render_html(self, docids, data=None):
@@ -19,4 +19,4 @@ class ReportProductLabel(models.AbstractModel):
             'data': data,
             'docs': wizard.settings_ids,
         }
-        return self.env['report'].render('product_label.report_product_label', docargs)
+        return self.env['report'].render('product_label_custom.report_product_label', docargs)

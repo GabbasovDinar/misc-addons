@@ -34,4 +34,4 @@ class ProductLabelWizard(models.TransientModel):
     @api.multi
     def print_labels_button(self):
         self.ensure_one()
-        return self.env['report'].get_action(self, 'product_label.report_product_label')
+        return self.env['report'].get_action(self, 'product_label_custom.report_product_label')

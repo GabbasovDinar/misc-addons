@@ -8,8 +8,8 @@ License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html). -->
             model="product.label.report.settings"
             string="Product Label report"
             report_type="qweb-pdf"
-            name="product_label.report_product_label"
-            file="product_label.report_product_label"
+            name="product_label_custom.report_product_label"
+            file="product_label_custom.report_product_label"
             />
     </data>
 </odoo>
