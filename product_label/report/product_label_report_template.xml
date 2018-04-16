@@ -3,9 +3,9 @@
 License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html). -->
 <odoo>
     <template id="report_product_label">
-        <t t-call="report.html_container">
-            <div class="page">
-                <t t-foreach="docs" t-as="o">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="report.html_container">
+                <div class="page" t-attf-data-label-id="#{o.id}">
                     <t t-foreach="range(0, o.quantity)" t-as="i">
                         <t t-set="product" t-value="o.product_id"/>
                         <t t-set="label" t-value="o.label_id"/>
@@ -23,8 +23,8 @@ License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html). -->
                             </t>
                         </t>
                     </t>
-                </t>
-            </div>
+                </div>
+            </t>
         </t>
     </template>
 </odoo>
